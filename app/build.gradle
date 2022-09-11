@@ -53,6 +53,10 @@ dependencies {
     implementation "com.google.dagger:hilt-android:2.43.2"
     kapt "com.google.dagger:hilt-compiler:2.43.2"
 
+    implementation 'com.squareup.retrofit2:retrofit:2.9.0'
+    implementation 'com.squareup.retrofit2:converter-gson:2.9.0'
+    implementation 'com.google.code.gson:gson:2.9.1'
+
     implementation 'androidx.core:core-ktx:1.9.0'
     implementation "androidx.compose.ui:ui:$compose_version"
     implementation "androidx.compose.material:material:$compose_version"
@@ -64,4 +68,10 @@ dependencies {
     androidTestImplementation "androidx.compose.ui:ui-test-junit4:$compose_version"
     debugImplementation "androidx.compose.ui:ui-tooling:$compose_version"
     debugImplementation "androidx.compose.ui:ui-test-manifest:$compose_version"
+
+    // Version must be the same as Retrofit's OkHttp3
+    //noinspection GradleDependency
+    androidTestImplementation "com.squareup.okhttp3:mockwebserver:3.14.9"
+
+    androidTestImplementation 'androidx.test:rules:1.4.0'
 }
