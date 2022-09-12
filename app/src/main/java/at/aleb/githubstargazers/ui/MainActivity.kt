@@ -13,8 +13,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.*
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Search
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -23,6 +21,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.paging.LoadState
+import androidx.paging.PagingData
 import androidx.paging.compose.LazyPagingItems
 import androidx.paging.compose.collectAsLazyPagingItems
 import androidx.paging.compose.items
@@ -34,6 +33,7 @@ import at.aleb.githubstargazers.ui.vm.GitHubViewModel.StargazersState
 import at.aleb.githubstargazers.ui.vm.GitHubViewModel.UserState
 import coil.compose.rememberAsyncImagePainter
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.flow.Flow
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -44,86 +44,13 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             GitHubStargazersTheme {
-                Scaffold(
-                    topBar = {
-                        TopAppBar(
-                            title = {
-                                Text(getString(R.string.app_name))
-                            }
-                        )
-                    },
-                    backgroundColor = MaterialTheme.colors.background,
-                    content = {
-                        Column(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .padding(10.dp),
-                            verticalArrangement = Arrangement.Top,
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                        ) {
-                            var ownerName by remember { mutableStateOf("") }
-                            var repoName by remember { mutableStateOf("") }
-
-                            SearchBox(label = getString(R.string.owner_name),
-                                term = ownerName,
-                                onChange = {
-                                    ownerName = it
-                                },
-                                onSearch = {
-                                    viewModel.setOwner(ownerName)
-                                })
-
-                            Spacer(modifier = Modifier.height(10.dp))
-
-                            val userState =
-                                viewModel.owner.collectAsState(initial = UserState.START)
-
-                            when (userState.value) {
-                                is UserState.START -> {}
-                                is UserState.LOADING -> {
-                                    CircularProgressIndicator()
-                                }
-                                is UserState.NOTFOUND -> {
-                                    Text(getString(R.string.user_not_exists) + ": " + (userState.value as UserState.NOTFOUND).message)
-                                }
-                                is UserState.NOCONNECTION -> {
-                                    Text(getString(R.string.no_connection))
-                                }
-                                is UserState.ERROR -> {
-                                    Text(getString(R.string.error) + ": " + (userState.value as UserState.ERROR).code)
-                                }
-                                is UserState.SUCCESS -> {
-                                    val user =
-                                        (userState.value as UserState.SUCCESS).data
-
-                                    UserCard(user = user)
-
-                                    Spacer(modifier = Modifier.height(10.dp))
-
-                                    SearchBox(
-                                        label = getString(R.string.repo_name),
-                                        term = repoName,
-                                        onChange = {
-                                            repoName = it
-                                        },
-                                        onSearch = {
-                                            viewModel.setRepoName(repoName)
-                                        })
-
-                                    Spacer(modifier = Modifier.height(10.dp))
-
-                                    StargazersList(
-                                        this@MainActivity,
-                                        viewModel.stargazers.collectAsLazyPagingItems(),
-                                        viewModel.stargazersLoadingState.collectAsState(
-                                            initial = StargazersState.START
-                                        ),
-                                        userState
-                                    )
-                                }
-                            }
-                        }
-                    }
+                MainContent(
+                    this,
+                    viewModel.owner,
+                    viewModel.stargazers,
+                    viewModel.stargazersLoadingState,
+                    { viewModel.setOwner(it) },
+                    { viewModel.setRepoName(it) }
                 )
             }
         }
@@ -131,7 +58,97 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-private fun StargazersList(
+fun MainContent(
+    context: Context,
+    user: Flow<UserState>,
+    stargazers: Flow<PagingData<GitHubUser>>,
+    stargazersLoadingState: Flow<StargazersState>,
+    setOwner: (String) -> Unit,
+    setRepoName: (String) -> Unit
+) {
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = {
+                    Text(context.getString(R.string.app_name))
+                }
+            )
+        },
+        backgroundColor = MaterialTheme.colors.background,
+        content = {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(10.dp),
+                verticalArrangement = Arrangement.Top,
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                var ownerName by remember { mutableStateOf("") }
+                var repoName by remember { mutableStateOf("") }
+
+                SearchBox(label = context.getString(R.string.owner_name),
+                    term = ownerName,
+                    onChange = {
+                        ownerName = it
+                    },
+                    onSearch = {
+                        setOwner(ownerName)
+                    })
+
+                Spacer(modifier = Modifier.height(10.dp))
+
+                val userState = user.collectAsState(initial = UserState.START)
+                when (userState.value) {
+                    is UserState.START -> {}
+                    is UserState.LOADING -> {
+                        CircularProgressIndicator()
+                    }
+                    is UserState.NOTFOUND -> {
+                        Text(context.getString(R.string.user_not_exists) + ": " + (userState.value as UserState.NOTFOUND).message)
+                    }
+                    is UserState.NOCONNECTION -> {
+                        Text(context.getString(R.string.no_connection))
+                    }
+                    is UserState.ERROR -> {
+                        Text(context.getString(R.string.error) + ": " + (userState.value as UserState.ERROR).code)
+                    }
+                    is UserState.SUCCESS -> {
+                        val userData =
+                            (userState.value as UserState.SUCCESS).data
+
+                        UserCard(user = userData)
+
+                        Spacer(modifier = Modifier.height(10.dp))
+
+                        SearchBox(
+                            label = context.getString(R.string.repo_name),
+                            term = repoName,
+                            onChange = {
+                                repoName = it
+                            },
+                            onSearch = {
+                                setRepoName(repoName)
+                            })
+
+                        Spacer(modifier = Modifier.height(10.dp))
+
+                        StargazersList(
+                            context,
+                            stargazers.collectAsLazyPagingItems(),
+                            stargazersLoadingState.collectAsState(
+                                initial = StargazersState.START
+                            ),
+                            userState
+                        )
+                    }
+                }
+            }
+        }
+    )
+}
+
+@Composable
+fun StargazersList(
     context: Context,
     lazyItems: LazyPagingItems<GitHubUser>,
     stargazersState: State<StargazersState>,
@@ -172,7 +189,7 @@ private fun StargazersList(
 }
 
 @Composable
-private fun SearchBox(
+fun SearchBox(
     label: String,
     term: String,
     onChange: (String) -> Unit,
@@ -189,27 +206,12 @@ private fun SearchBox(
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
             keyboardActions = KeyboardActions(onSearch = { onSearch(term) })
         )
-        Button(
-            modifier = Modifier
-                .padding(0.dp)
-                .height(IntrinsicSize.Max),
-            onClick = {
-                onSearch(term)
-            }) {
-            Icon(
-                Icons.Filled.Search,
-                stringResource(R.string.search),
-                modifier = Modifier
-                    .size(ButtonDefaults.IconSize)
-                    .padding(0.dp)
-            )
-        }
     }
 }
 
 
 @Composable
-private fun UserCard(
+fun UserCard(
     user: GitHubUser
 ) {
     Surface(

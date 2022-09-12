@@ -10,10 +10,7 @@ import at.aleb.githubstargazers.data.repositories.GitHubRepository
 import at.aleb.githubstargazers.ui.util.DataSource
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.flatMapLatest
-import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import retrofit2.HttpException
 import javax.inject.Inject
@@ -69,7 +66,7 @@ class GitHubViewModel @Inject constructor(
         )
     }.flatMapLatest {
         if (it.owner == "" || it.repo == "") {
-            stargazersLoadingState.emit(StargazersState.START)
+            _stargazersLoadingState.emit(StargazersState.START)
             Pager(PagingConfig(pageSize)) {
                 DataSource { _, _ ->
                     listOf<GitHubUser>()
@@ -80,10 +77,10 @@ class GitHubViewModel @Inject constructor(
                 DataSource { page, per_page ->
                     try {
                         gitHubRepository.getStargazers(it.owner, it.repo, page, per_page).also {
-                            stargazersLoadingState.emit(StargazersState.SUCCESS)
+                            _stargazersLoadingState.emit(StargazersState.SUCCESS)
                         }
                     } catch (e: HttpException) {
-                        stargazersLoadingState.emit(
+                        _stargazersLoadingState.emit(
                             when (e.code()) {
                                 404 -> StargazersState.NOTFOUND(it.owner)
                                 else -> StargazersState.ERROR(e.code())
@@ -91,7 +88,7 @@ class GitHubViewModel @Inject constructor(
                         )
                         throw e
                     } catch (e: Exception) {
-                        stargazersLoadingState.emit(StargazersState.NOCONNECTION)
+                        _stargazersLoadingState.emit(StargazersState.NOCONNECTION)
                         throw e
                     }
                 }
@@ -99,7 +96,9 @@ class GitHubViewModel @Inject constructor(
         }
     }
 
-    val stargazersLoadingState = MutableStateFlow<StargazersState>(StargazersState.START)
+    private val _stargazersLoadingState = MutableStateFlow<StargazersState>(StargazersState.START)
+
+    val stargazersLoadingState = _stargazersLoadingState.asStateFlow()
 
     @OptIn(ExperimentalCoroutinesApi::class)
     val owner = parameters.flatMapLatest {
