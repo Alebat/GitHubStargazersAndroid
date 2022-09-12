@@ -1,3 +1,14 @@
 <resources>
     <string name="app_name">GitHub Stargazers</string>
+    <string name="search">Search</string>
+    <string name="user_avatar">User avatar</string>
+    <string name="user_not_exists">User does not exist</string>
+    <string name="error">Error</string>
+    <string name="no_connection">No connection</string>
+    <string name="no_repos_for_user">User does not have repositories.</string>
+    <string name="repo_name">Repository name</string>
+    <string name="repo_not_found">Repository not found.</string>
+    <string name="no_stargazers">This repository has no stargazers.</string>
+    <string name="stargazers_title">Stargazers</string>
+    <string name="owner_name">Owner name</string>
 </resources>

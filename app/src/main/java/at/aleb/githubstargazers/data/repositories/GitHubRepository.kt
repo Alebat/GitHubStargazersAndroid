@@ -12,6 +12,12 @@ class GitHubRepository @Inject constructor(
     @QualifyDispatcher.IO
     private val dispatcher: CoroutineDispatcher
 ) {
+    suspend fun getUser(
+        user: String
+    ): GitHubUser = withContext(dispatcher) {
+        gitHubService.getUser(user)
+    }
+
     suspend fun getStargazers(
         owner: String,
         repository: String,
