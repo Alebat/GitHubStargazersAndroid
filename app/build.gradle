@@ -83,8 +83,7 @@ dependencies {
     testImplementation "app.cash.turbine:turbine:0.9.0"
 
     // Version must be the same as Retrofit's OkHttp3
-    //noinspection GradleDependency
-    androidTestImplementation "com.squareup.okhttp3:mockwebserver:3.14.9"
+    androidTestImplementation "com.squareup.okhttp3:mockwebserver:4.9.3"
 
     androidTestImplementation 'androidx.test:rules:1.4.0'
 }
