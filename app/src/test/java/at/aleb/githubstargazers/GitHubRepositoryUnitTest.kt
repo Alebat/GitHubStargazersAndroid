@@ -1,6 +1,5 @@
 package at.aleb.githubstargazers
 
-import at.aleb.githubstargazers.data.GitHubUser
 import at.aleb.githubstargazers.data.network.GitHubService
 import at.aleb.githubstargazers.data.repositories.GitHubRepository
 import at.aleb.githubstargazers.util.MainCoroutineRule
@@ -23,21 +22,6 @@ class GitHubRepositoryUnitTest {
     private val service: GitHubService = mockk()
     private lateinit var repository: GitHubRepository
 
-    private val sampleUserList = listOf(
-        GitHubUser(
-            name = "schacon",
-            avatarUrl = "https://avatars.githubusercontent.com/u/70?v=4"
-        ),
-        GitHubUser(
-            name = "adelcambre",
-            avatarUrl = "https://avatars.githubusercontent.com/u/242?v=4"
-        ),
-        GitHubUser(
-            name = "usergenic",
-            avatarUrl = "https://avatars.githubusercontent.com/u/578?v=4"
-        )
-    )
-
     @Before
     fun setUp() {
         repository = GitHubRepository(service, Dispatchers.Main)
@@ -45,19 +29,19 @@ class GitHubRepositoryUnitTest {
 
     @Test
     fun test_user() = runTest {
-        coEvery { service.getUser(any()) } returns(sampleUserList[0])
+        coEvery { service.getUser(any()) } returns(Samples.userList[0])
 
         val user = repository.getUser("test_user")
 
-        assertEquals(sampleUserList[0], user)
+        assertEquals(Samples.userList[0], user)
     }
 
     @Test
     fun test_stargazers() = runTest {
-        coEvery { service.getStargazers(any(), any(), any(), any()) } returns(sampleUserList)
+        coEvery { service.getStargazers(any(), any(), any(), any()) } returns(Samples.userList)
 
         val stargazers = repository.getStargazers("test_user", "test_repo", 5, 40)
 
-        assertEquals(sampleUserList, stargazers)
+        assertEquals(Samples.userList, stargazers)
     }
 }

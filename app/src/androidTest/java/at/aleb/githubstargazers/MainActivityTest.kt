@@ -24,7 +24,7 @@ class MainActivityTest {
                 MainContent(
                     composeTestRule.activity.baseContext,
                     flowOf(GitHubViewModel.UserState.SUCCESS(Samples.user)),
-                    flowOf(PagingData.from(Samples.userList)),
+                    flowOf(PagingData.from(Samples.userListNoAvatar)),
                     flowOf(GitHubViewModel.StargazersState.SUCCESS),
                     {}, {}
                 )
