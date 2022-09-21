@@ -1,7 +1,7 @@
 package at.aleb.githubstargazers
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import at.aleb.githubstargazers.data.GitHubUser
+import at.aleb.githubstargazers.data.dto.GitHubUserDto
 import at.aleb.githubstargazers.data.network.GitHubService
 import kotlinx.coroutines.runBlocking
 import okhttp3.OkHttpClient
@@ -52,7 +52,7 @@ class GitHubServiceTest {
             val actual = svc.getUser("")
 
             val expected =
-                GitHubUser(
+                GitHubUserDto(
                     name = "octocat",
                     avatarUrl = "https://github.com/images/error/octocat_happy.gif"
                 )

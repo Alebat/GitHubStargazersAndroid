@@ -4,9 +4,12 @@ import androidx.paging.AsyncPagingDataDiffer
 import androidx.paging.LOGGER
 import androidx.paging.LoadState
 import app.cash.turbine.test
-import at.aleb.githubstargazers.data.GitHubUser
-import at.aleb.githubstargazers.data.repositories.GitHubRepository
-import at.aleb.githubstargazers.ui.vm.GitHubViewModel
+import at.aleb.githubstargazers.data.dto.GitHubUserDto
+import at.aleb.githubstargazers.data.mapper.toEntity
+import at.aleb.githubstargazers.data.repository.GitHubRepository
+import at.aleb.githubstargazers.domain.Resource
+import at.aleb.githubstargazers.domain.model.GitHubUser
+import at.aleb.githubstargazers.ui.vm.MainViewModel
 import at.aleb.githubstargazers.util.MainCoroutineRule
 import at.aleb.githubstargazers.util.MyDiffCallback
 import at.aleb.githubstargazers.util.NoopListCallback
@@ -22,26 +25,22 @@ import kotlinx.coroutines.test.TestCoroutineScheduler
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
-import okhttp3.MediaType.Companion.toMediaTypeOrNull
-import okhttp3.ResponseBody.Companion.toResponseBody
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
-import retrofit2.HttpException
-import retrofit2.Response
 
 
 @OptIn(ExperimentalCoroutinesApi::class)
-class GitHubViewModelTest {
+class MainViewModelTest {
 
     @get:Rule
     val mainCoroutineRule = MainCoroutineRule()
 
     private lateinit var differ: AsyncPagingDataDiffer<GitHubUser>
     private val gitHubRepository: GitHubRepository = mockk()
-    private lateinit var viewModel: GitHubViewModel
+    private lateinit var viewModel: MainViewModel
 
     @Before
     fun setUp() {
@@ -54,7 +53,7 @@ class GitHubViewModelTest {
             NoopListCallback(),
             TestCoroutineScheduler()
         )
-        viewModel = GitHubViewModel(gitHubRepository)
+        viewModel = MainViewModel(gitHubRepository)
     }
 
     @After
@@ -68,14 +67,14 @@ class GitHubViewModelTest {
             gitHubRepository.getUser(
                 any()
             )
-        } returns Samples.user
+        } returns Resource.SUCCESS(Samples.user.toEntity())
 
         launch {
             viewModel.owner.test {
-                assertEquals(GitHubViewModel.UserState.LOADING::class.java, awaitItem()::class.java)
+                assertEquals(Resource.LOADING::class.java, awaitItem()::class.java)
                 val item = awaitItem()
-                assertEquals(GitHubViewModel.UserState.SUCCESS::class.java, item::class.java)
-                assertEquals((item as GitHubViewModel.UserState.SUCCESS).data, Samples.user)
+                assertEquals(Resource.SUCCESS::class.java, item::class.java)
+                assertEquals(Samples.user.toEntity(), (item as Resource.SUCCESS).data)
                 cancel()
             }
         }
@@ -93,7 +92,7 @@ class GitHubViewModelTest {
             gitHubRepository.getStargazers(
                 any(), any(), any(), any()
             )
-        } returns Samples.userList
+        } returns Resource.SUCCESS(Samples.userList.map { it.toEntity() })
 
 
         launch {
@@ -113,7 +112,7 @@ class GitHubViewModelTest {
 
         advanceUntilIdle()
 
-        assertEquals(Samples.userList, differ.snapshot().items)
+        assertEquals(differ.snapshot().items, Samples.userList.map { it.toEntity() })
         coVerify { gitHubRepository.getStargazers(any(), any(), any(), any()) }
 
         // Exit blocking 'submitData'
@@ -126,13 +125,13 @@ class GitHubViewModelTest {
             gitHubRepository.getUser(
                 any()
             )
-        } throws Exception()
+        } returns Resource.NOCONNECTION()
 
         launch {
             viewModel.owner.test {
-                assertEquals(GitHubViewModel.UserState.LOADING::class.java, awaitItem()::class.java)
+                assertEquals(Resource.LOADING::class.java, awaitItem()::class.java)
                 val item = awaitItem()
-                assertEquals(GitHubViewModel.UserState.NOCONNECTION::class.java, item::class.java)
+                assertEquals(Resource.NOCONNECTION::class.java, item::class.java)
                 cancel()
             }
         }
@@ -150,7 +149,7 @@ class GitHubViewModelTest {
             gitHubRepository.getStargazers(
                 any(), any(), any(), any()
             )
-        } throws Exception()
+        } returns Resource.NOCONNECTION()
 
         launch {
             differ.submitData(viewModel.stargazers.first())
@@ -162,7 +161,7 @@ class GitHubViewModelTest {
                 assertEquals(LoadState.Error::class.java, awaitItem().refresh::class.java)
             }
             viewModel.stargazersLoadingState.test {
-                assertEquals(GitHubViewModel.StargazersState.NOCONNECTION::class.java, awaitItem()::class.java)
+                assertEquals(Resource.NOCONNECTION::class.java, awaitItem()::class.java)
             }
         }
 
@@ -171,7 +170,7 @@ class GitHubViewModelTest {
 
         advanceUntilIdle()
 
-        assertEquals(mutableListOf<GitHubUser>(), differ.snapshot().items)
+        assertEquals(mutableListOf<GitHubUserDto>(), differ.snapshot().items)
 
         coVerify { gitHubRepository.getStargazers(any(), any(), any(), any()) }
 
@@ -185,13 +184,13 @@ class GitHubViewModelTest {
             gitHubRepository.getUser(
                 any()
             )
-        } throws HttpException(Response.error<GitHubUser>(404, "".toResponseBody("".toMediaTypeOrNull())))
+        } returns Resource.NOTFOUND()
 
         launch {
             viewModel.owner.test {
-                assertEquals(GitHubViewModel.UserState.LOADING::class.java, awaitItem()::class.java)
+                assertEquals(Resource.LOADING::class.java, awaitItem()::class.java)
                 val item = awaitItem()
-                assertEquals(GitHubViewModel.UserState.NOTFOUND::class.java, item::class.java)
+                assertEquals(Resource.NOTFOUND::class.java, item::class.java)
             }
         }
 
@@ -208,7 +207,7 @@ class GitHubViewModelTest {
             gitHubRepository.getStargazers(
                 any(), any(), any(), any()
             )
-        } throws HttpException(Response.error<GitHubUser>(404, "".toResponseBody("".toMediaTypeOrNull())))
+        } returns Resource.NOTFOUND()
 
         launch {
             differ.submitData(viewModel.stargazers.first())
@@ -220,7 +219,7 @@ class GitHubViewModelTest {
                 assertEquals(LoadState.Error::class.java, awaitItem().refresh::class.java)
             }
             viewModel.stargazersLoadingState.test {
-                assertEquals(GitHubViewModel.StargazersState.NOTFOUND::class.java, awaitItem()::class.java)
+                assertEquals(Resource.NOTFOUND::class.java, awaitItem()::class.java)
             }
         }
 
@@ -229,7 +228,7 @@ class GitHubViewModelTest {
 
         advanceUntilIdle()
 
-        assertEquals(mutableListOf<GitHubUser>(), differ.snapshot().items)
+        assertEquals(mutableListOf<GitHubUserDto>(), differ.snapshot().items)
 
         coVerify { gitHubRepository.getStargazers(any(), any(), any(), any()) }
 

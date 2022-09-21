@@ -1,7 +1,9 @@
 package at.aleb.githubstargazers
 
+import at.aleb.githubstargazers.data.mapper.toEntity
 import at.aleb.githubstargazers.data.network.GitHubService
-import at.aleb.githubstargazers.data.repositories.GitHubRepository
+import at.aleb.githubstargazers.data.repository.GitHubRepository
+import at.aleb.githubstargazers.domain.Resource
 import at.aleb.githubstargazers.util.MainCoroutineRule
 import io.mockk.coEvery
 import io.mockk.mockk
@@ -33,7 +35,7 @@ class GitHubRepositoryUnitTest {
 
         val user = repository.getUser("test_user")
 
-        assertEquals(Samples.userList[0], user)
+        assertEquals(Resource.SUCCESS(Samples.userList[0].toEntity()), user)
     }
 
     @Test
@@ -42,6 +44,6 @@ class GitHubRepositoryUnitTest {
 
         val stargazers = repository.getStargazers("test_user", "test_repo", 5, 40)
 
-        assertEquals(Samples.userList, stargazers)
+        assertEquals(Resource.SUCCESS(Samples.userList.map { it.toEntity() }), stargazers)
     }
 }

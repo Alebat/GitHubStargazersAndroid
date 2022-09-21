@@ -5,10 +5,11 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.paging.PagingData
+import at.aleb.githubstargazers.data.mapper.toEntity
+import at.aleb.githubstargazers.domain.Resource
 import at.aleb.githubstargazers.ui.MainActivity
-import at.aleb.githubstargazers.ui.MainContent
+import at.aleb.githubstargazers.ui.compose.MainScreen
 import at.aleb.githubstargazers.ui.theme.GitHubStargazersTheme
-import at.aleb.githubstargazers.ui.vm.GitHubViewModel
 import kotlinx.coroutines.flow.flowOf
 import org.junit.Rule
 import org.junit.Test
@@ -21,11 +22,11 @@ class MainActivityTest {
     fun test_searchBoxes() {
         composeTestRule.activity.setContent {
             GitHubStargazersTheme {
-                MainContent(
+                MainScreen(
                     composeTestRule.activity.baseContext,
-                    flowOf(GitHubViewModel.UserState.SUCCESS(Samples.user)),
-                    flowOf(PagingData.from(Samples.userListNoAvatar)),
-                    flowOf(GitHubViewModel.StargazersState.SUCCESS),
+                    flowOf(Resource.SUCCESS(Samples.user.toEntity())),
+                    flowOf(PagingData.from(Samples.userListNoAvatar.map { it.toEntity() })),
+                    flowOf(Resource.SUCCESS(listOf())),
                     {}, {}
                 )
             }
